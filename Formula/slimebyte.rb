@@ -1,8 +1,8 @@
 class Slimebyte < Formula
   desc "Minecraft slime farm finder: seed search, perimeter commands and a terminal app"
   homepage "https://github.com/kyoubitt/SlimeByte"
-  url "https://github.com/kyoubitt/SlimeByte/archive/refs/tags/v1.4.tar.gz"
-  sha256 "ff1e29d99a3c815a011a4426a36f1df035b2bc2acd393ff2fda620f9a4ac7f63"
+  url "https://github.com/kyoubitt/SlimeByte/archive/refs/tags/v1.5.tar.gz"
+  sha256 "c07abc1ec7ec5e2fa25af00dd29cdb179fa5414f9c1d3f5d3e6232d47476d859"
   head "https://github.com/kyoubitt/SlimeByte.git", branch: "main"
 
   depends_on "python@3.13"
