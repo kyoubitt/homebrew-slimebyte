@@ -1,15 +1,21 @@
 class Slimebyte < Formula
   desc "Minecraft slime farm finder: seed search, perimeter commands and a terminal app"
   homepage "https://github.com/kyoubitt/SlimeByte"
-  url "https://github.com/kyoubitt/SlimeByte/archive/refs/tags/v1.2.tar.gz"
-  sha256 "348dba279ed4ca04f194247085c707d8d8e82721459cc30888cc8040a5b867ad"
+  url "https://github.com/kyoubitt/SlimeByte/archive/refs/tags/v1.3.tar.gz"
+  sha256 "87d6e3e12e6557b3afcbe4f638922e74353cd217dd991e5ac89e63b7a37ec611"
   head "https://github.com/kyoubitt/SlimeByte.git", branch: "main"
 
   depends_on "python@3.13"
 
   def install
     cd "slime_toolchain" do
-      # The CPU tools. The GPU search (slime_gpu) is CUDA, which macOS doesn't have, so it isn't built here.
+      # The position search without CUDA: slime_cl uses the graphics card through OpenCL (opened at run time, so
+      # nothing to link), slime_cpu uses every core (AVX2 on an Intel Mac that has it; Apple silicon needs no flag).
+      avx2 = Hardware::CPU.intel? && Hardware::CPU.avx2? ? ["-mavx2"] : []
+      system ENV.cxx, "-O3", *avx2, "-std=c++17", "-pthread", "slime_cpu.cpp", "-o", "slime_cpu"
+      system ENV.cxx, "-O2", "-std=c++17", "slime_cl.cpp", *(OS.linux? ? ["-ldl"] : []), "-o", "slime_cl"
+
+      # The rest of the CPU tools. (slime_gpu is CUDA, which macOS doesn't have, so it isn't built here.)
       system ENV.cxx, "-O3", "-std=c++17", "-pthread", "slime_refine.cpp", "-o", "slime_refine"
       system ENV.cxx, "-O3", "-std=c++17", "perimeter_setup.cpp", "-o", "perimeter_setup"
       system ENV.cxx, "-O3", "-std=c++17", "afk_rescan.cpp", "-o", "afk_rescan"
@@ -40,13 +46,16 @@ class Slimebyte < Formula
     <<~EOS
       Run:  slimebyte
 
-      macOS has no CUDA, so this build has no GPU search: the app does Manual scoring, the map and the
-      perimeter commands. Best AFK / Cluster search needs an NVIDIA GPU (Linux or Windows).
+      Best AFK / Cluster search runs on your graphics card through OpenCL, or on the CPU if that
+      doesn't work. `slimebyte doctor` says which one it is using.
+
+      Based on xvyz1's Vibecoded-Slime-Chunk-Finder: https://github.com/xvyz1/Vibecoded-Slime-Chunk-Finder
     EOS
   end
 
   test do
     assert_match "slime", shell_output("#{bin}/slimebyte --help")
+    assert_match "SELF TEST PASSED", shell_output("#{libexec}/slime_cpu --self-test")
     assert_predicate libexec/"perimeter_gen/perimeter_gen", :executable?
   end
 end
